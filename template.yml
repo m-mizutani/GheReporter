@@ -1,0 +1,97 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+  LambdaRoleArn:
+    Type: String
+    Default: ""
+  ReportLineArn:
+    Type: String
+  SecretArn:
+    Type: String
+
+Conditions:
+  LambdaRoleRequired:
+    Fn::Equals: [ { Ref: LambdaRoleArn }, "" ]
+
+Resources:
+  # --------------------------------------------------------
+  # DynamoDBs
+  CacheTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+      - AttributeName: report_id
+        AttributeType: S
+      KeySchema:
+      - AttributeName: report_id
+        KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
+  # --------------------------------------------------------
+  # Lambda functions
+  Handler:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: build
+      Handler: main
+      Runtime: go1.x
+      CodeUri: build
+      Timeout: 300
+      MemorySize: 128
+      Role:
+        Fn::If: [ LambdaRoleRequired, {"Fn::GetAtt": LambdaRole.Arn}, {Ref: LambdaRoleArn} ]
+      Environment:
+        Variables:
+          REPORT_LINE:
+            Ref: ReportLineArn
+          SECRET_ARN:
+            Ref: SecretArn
+      Events:
+        ReportLine:
+          Type: SNS
+          Properties:
+            Topic:
+              Ref: ReportLineArn
+
+  # --------------------------------------------------------
+  # IAM Roles
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Condition: LambdaRoleRequired
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: ["lambda.amazonaws.com"]
+            Action: ["sts:AssumeRole"]
+      Path: "/"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+      Policies:
+        - PolicyName: "AlertResponderLambdaPolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:GetItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                  - dynamodb:UpdateItem
+                Resource:
+                  - Fn::GetAtt: CacheTable.Arn
+                  - Fn::Sub: [ "${TableArn}/index/*", { TableArn: { "Fn::GetAtt": CacheTable.Arn } } ]
+              - Effect: "Allow"
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource:
+                  - Ref: SecretArn
