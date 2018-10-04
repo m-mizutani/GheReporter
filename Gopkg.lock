@@ -187,6 +187,11 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/aws/aws-lambda-go/events",
+    "github.com/aws/aws-lambda-go/lambda",
+    "github.com/aws/aws-sdk-go/aws",
+    "github.com/aws/aws-sdk-go/aws/session",
+    "github.com/guregu/dynamo",
     "github.com/m-mizutani/AlertResponder/lib",
     "github.com/pkg/errors",
     "github.com/satori/go.uuid",

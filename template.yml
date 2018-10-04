@@ -47,10 +47,10 @@ Resources:
         Fn::If: [ LambdaRoleRequired, {"Fn::GetAtt": LambdaRole.Arn}, {Ref: LambdaRoleArn} ]
       Environment:
         Variables:
-          REPORT_LINE:
-            Ref: ReportLineArn
           SECRET_ARN:
             Ref: SecretArn
+          CACHE_TABLE:
+            Ref: CacheTable
       Events:
         ReportLine:
           Type: SNS
