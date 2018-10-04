@@ -35,14 +35,6 @@ type reportCache struct {
 	HtmlURL  string      `dynamo:"html_url"`
 }
 
-func buildMainBody(report ar.Report) string {
-	return "gueeeeeee"
-}
-
-func buildCommentBody(report ar.Report) string {
-	return "ugooooooo"
-}
-
 func EmitReport(report ar.Report, region, secretArn, tableName string) (*Result, error) {
 	result := Result{}
 
@@ -69,7 +61,7 @@ func EmitReport(report ar.Report, region, secretArn, tableName string) (*Result,
 	switch err {
 	case dynamo.ErrNotFound:
 		// If not existing issue, create a new one.
-		body := buildMainBody(report)
+		body := BuildIssueBody(report)
 		title := report.Alert.Title()
 		issue, err = ghe.NewIssue(title, body)
 		if err != nil {
@@ -97,7 +89,7 @@ func EmitReport(report ar.Report, region, secretArn, tableName string) (*Result,
 	result.HtmlURL = issue.HtmlURL
 
 	if len(report.Pages) > 0 {
-		body := buildCommentBody(report)
+		body := BuildCommentBody(report)
 		comment, err := issue.AddComment(body)
 		if err != nil {
 			return nil, errors.Wrap(err, "Fail to add a comment to GHE issue")
