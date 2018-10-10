@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	ar "github.com/m-mizutani/AlertResponder/lib"
-	main "github.com/m-mizutani/GheReporter"
+	main "github.com/m-mizutani/GithubEmitter"
 	uuid "github.com/satori/go.uuid"
 )
 

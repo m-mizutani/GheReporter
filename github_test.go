@@ -3,7 +3,7 @@ package main_test
 import (
 	"testing"
 
-	main "github.com/m-mizutani/GheReporter"
+	main "github.com/m-mizutani/GithubEmitter"
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
