@@ -1,9 +1,9 @@
-AR_CONFIG ?= "param.cfg"
+AR_CONFIG ?= ${CONFIG}
 
 CODE_S3_BUCKET := $(shell cat $(AR_CONFIG) | grep CodeS3Bucket | cut -d = -f 2)
 CODE_S3_PREFIX := $(shell cat $(AR_CONFIG) | grep CodeS3Prefix | cut -d = -f 2)
 STACK_NAME := $(shell cat $(AR_CONFIG) | grep StackName | cut -d = -f 2)
-PARAMETERS := $(shell cat $(AR_CONFIG) | grep -e LambdaRoleArn -e ReportLineArn -e SecretArn | tr '\n' ' ')
+PARAMETERS := $(shell cat $(AR_CONFIG) | grep -e LambdaRoleArn -e ReportLineArn -e SecretArn -e VpcSecurityGroups -e VpcSubnetIds | tr '\n' ' ')
 TEMPLATE_FILE=template.yml
 
 all: deploy

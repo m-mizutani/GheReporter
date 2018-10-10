@@ -105,12 +105,10 @@ func EmitReport(report ar.Report, region, secretArn, tableName string) (*Result,
 func main() {
 	lambda.Start(func(ctx context.Context, event events.SNSEvent) (string, error) {
 		// Get region
-		arn, err := ar.NewArnFromContext(ctx)
-		if err != nil {
-			ar.Dump("context", ctx)
-			log.Fatal("Invalid context:", err)
+		region := os.Getenv("AWS_REGION")
+		if region == "" {
+			log.Fatal("No AWS_REGION variable")
 		}
-		region := arn.Region()
 
 		for _, record := range event.Records {
 			var report ar.Report
