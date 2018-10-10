@@ -25,8 +25,8 @@ func BuildIssueBody(report ar.Report) string {
 
 	for _, attr := range report.Alert.Attrs {
 		base := fmt.Sprintf("  - %s: `%s`", attr.Key, attr.Value)
-		if attr.Context != "" {
-			base = fmt.Sprintf("%s (%s)", base, attr.Context)
+		if len(attr.Context) > 0 {
+			base = fmt.Sprintf("%s (%s)", base, strings.Join(attr.Context, ", "))
 		}
 		lines = append(lines, base)
 	}
@@ -35,5 +35,6 @@ func BuildIssueBody(report ar.Report) string {
 }
 
 func BuildCommentBody(report ar.Report) string {
+	// lines := []string{"# Inspection report"}
 	return "ugooooooo"
 }

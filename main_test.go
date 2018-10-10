@@ -1,6 +1,10 @@
 package main_test
 
 import (
+	"encoding/json"
+	"io/ioutil"
+	"log"
+	"os"
 	"testing"
 	"time"
 
@@ -19,6 +23,27 @@ type testParams struct {
 	TableName string `json:"table_name"`
 }
 
+func loadTestConfig(params interface{}) {
+	fpath := "test.json"
+	fd, err := os.Open(fpath)
+	if err != nil {
+		log.Fatal("Fail to open TestConfig:", fpath, err)
+	}
+	defer fd.Close()
+
+	fdata, err := ioutil.ReadAll(fd)
+	if err != nil {
+		log.Fatal("Fail to read TestConfig:", fpath, err)
+	}
+
+	err = json.Unmarshal(fdata, params)
+	if err != nil {
+		log.Fatal("Fail to unmarshal TestConfig", fpath, err)
+	}
+
+	return
+}
+
 func genDummyReport() ar.Report {
 	alertKey := uuid.NewV4().String()
 
@@ -32,12 +57,12 @@ func genDummyReport() ar.Report {
 				Type:    "ipaddr",
 				Value:   "10.0.0.1",
 				Key:     "source address",
-				Context: "remote",
+				Context: []string{"remote"},
 			},
 		},
 	}
 	reportID := ar.NewReportID()
-	report := ar.NewReport(reportID, &alert)
+	report := ar.NewReport(reportID, alert)
 
 	// ----------------------------
 	// Page1
@@ -110,12 +135,12 @@ func genDummyReport() ar.Report {
 	}
 	report.Pages = append(report.Pages, &page2)
 
-	return *report
+	return report
 }
 
 func TestAlertPost(t *testing.T) {
 	var params testParams
-	ar.LoadTestConfig(&params)
+	loadTestConfig(&params)
 
 	report := genDummyReport()
 	resp, err := main.EmitReport(report, params.Region, params.SecretArn, params.TableName)

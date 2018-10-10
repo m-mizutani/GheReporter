@@ -49,7 +49,7 @@ Resources:
         Variables:
           SECRET_ARN:
             Ref: SecretArn
-          CACHE_TABLE:
+          TABLE_NAME:
             Ref: CacheTable
       Events:
         ReportLine:

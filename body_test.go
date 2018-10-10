@@ -26,13 +26,13 @@ func TestAlertBody(t *testing.T) {
 				Type:    "ipaddr",
 				Value:   "10.0.0.1",
 				Key:     "src address",
-				Context: "remote",
+				Context: []string{"remote"},
 			},
 			ar.Attribute{
 				Type:    "ipaddr",
 				Value:   "192.168.3.1",
 				Key:     "dst address",
-				Context: "remote",
+				Context: []string{"remote"},
 			},
 			ar.Attribute{
 				Value: "3306",
@@ -46,9 +46,9 @@ func TestAlertBody(t *testing.T) {
 	}
 
 	reportID := ar.NewReportID()
-	report := ar.NewReport(reportID, &alert)
+	report := ar.NewReport(reportID, alert)
 
-	text := main.BuildIssueBody(*report)
+	text := main.BuildIssueBody(report)
 	assert.Contains(t, text, "  - src address: `10.0.0.1`")
 	assert.Contains(t, text, "  - dst address: `192.168.3.1` (remote)")
 	assert.Contains(t, text, "2018.10.04 17:38:46")
@@ -68,12 +68,12 @@ func TestCommentBody(t *testing.T) {
 				Type:    "ipaddr",
 				Value:   "10.0.0.1",
 				Key:     "source address",
-				Context: "remote",
+				Context: []string{"remote"},
 			},
 		},
 	}
 	reportID := ar.NewReportID()
-	report := ar.NewReport(reportID, &alert)
+	report := ar.NewReport(reportID, alert)
 
 	// ----------------------------
 	// Page1

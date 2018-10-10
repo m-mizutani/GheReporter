@@ -3,8 +3,6 @@ package main_test
 import (
 	"testing"
 
-	ar "github.com/m-mizutani/AlertResponder/lib"
-
 	main "github.com/m-mizutani/GheReporter"
 
 	uuid "github.com/satori/go.uuid"
@@ -20,7 +18,7 @@ type testConfig struct {
 
 func TestGitHubIssue(t *testing.T) {
 	cfg := testConfig{}
-	ar.LoadTestConfig(&cfg)
+	loadTestConfig(&cfg)
 
 	ghe, err := main.NewGitHub(cfg.GithubEndpoint, cfg.GithubRepository, cfg.GithubToken)
 
