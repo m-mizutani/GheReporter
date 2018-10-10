@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/k0kubun/pp"
 	"github.com/stretchr/testify/assert"
 
 	ar "github.com/m-mizutani/AlertResponder/lib"
@@ -146,4 +147,6 @@ func TestCommentBody(t *testing.T) {
 	}
 	report.Pages = append(report.Pages, &page2)
 
+	body := main.BuildCommentBody(report)
+	pp.Println(body)
 }
