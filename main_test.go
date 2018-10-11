@@ -8,8 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/k0kubun/pp"
-
 	"github.com/stretchr/testify/assert"
 
 	ar "github.com/m-mizutani/AlertResponder/lib"
@@ -66,11 +64,6 @@ func genDummyReport() ar.Report {
 
 	// ----------------------------
 	// Page1
-	page1 := ar.ReportPage{
-		Title:  "test1",
-		Author: "blue",
-	}
-
 	mw1 := ar.ReportMalware{
 		SHA256:    "4490da766c35af92c8d8768136a5e775ed6a0929226ea9ab8995e50d5c516bf9",
 		Timestamp: time.Now(),
@@ -89,22 +82,6 @@ func genDummyReport() ar.Report {
 			},
 		},
 		Relation: "communicated",
-	}
-
-	page1.RemoteHost = []ar.ReportRemoteHost{
-		ar.ReportRemoteHost{
-			IPAddr:         []string{"10.0.0.1"},
-			RelatedMalware: []ar.ReportMalware{mw1},
-		},
-	}
-
-	report.Pages = append(report.Pages, &page1)
-
-	// ----------------------------
-	// Page2
-	page2 := ar.ReportPage{
-		Title:  "test2",
-		Author: "orange",
 	}
 
 	mw2 := ar.ReportMalware{
@@ -127,13 +104,10 @@ func genDummyReport() ar.Report {
 		Relation: "embeded",
 	}
 
-	page2.RemoteHost = []ar.ReportRemoteHost{
-		ar.ReportRemoteHost{
-			IPAddr:         []string{"10.0.0.1"},
-			RelatedMalware: []ar.ReportMalware{mw2},
-		},
+	report.Content.RemoteHosts["10.0.0.1"] = ar.ReportRemoteHost{
+		IPAddr:         []string{"10.0.0.1"},
+		RelatedMalware: []ar.ReportMalware{mw1, mw2},
 	}
-	report.Pages = append(report.Pages, &page2)
 
 	return report
 }
@@ -149,9 +123,9 @@ func TestAlertPost(t *testing.T) {
 	assert.NotNil(t, resp)
 	assert.Contains(t, resp.ApiURL, "https://")
 	assert.Contains(t, resp.CommentApiURL, "https://")
-	pp.Println(resp)
 
-	report.Pages = []*ar.ReportPage{}
+	// Overwrite
+	report.Content.RemoteHosts = map[string]ar.ReportRemoteHost{}
 	respNoPage, err := main.EmitReport(report, params.Region, params.SecretArn, params.TableName)
 	assert.NoError(t, err)
 	assert.Equal(t, resp.ApiURL, respNoPage.ApiURL)

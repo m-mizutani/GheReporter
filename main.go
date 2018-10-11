@@ -88,8 +88,8 @@ func EmitReport(report ar.Report, region, secretArn, tableName string) (*Result,
 	result.ApiURL = issue.ApiURL
 	result.HtmlURL = issue.HtmlURL
 
-	if len(report.Pages) > 0 {
-		body := BuildCommentBody(report)
+	body := BuildCommentBody(report)
+	if len(body) > 0 {
 		comment, err := issue.AddComment(body)
 		if err != nil {
 			return nil, errors.Wrap(err, "Fail to add a comment to GHE issue")

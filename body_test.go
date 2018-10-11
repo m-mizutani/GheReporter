@@ -1,10 +1,10 @@
 package main_test
 
 import (
+	"log"
 	"testing"
 	"time"
 
-	"github.com/k0kubun/pp"
 	"github.com/stretchr/testify/assert"
 
 	ar "github.com/m-mizutani/AlertResponder/lib"
@@ -78,10 +78,6 @@ func TestCommentBody(t *testing.T) {
 
 	// ----------------------------
 	// Page1
-	page1 := ar.ReportPage{
-		Title:  "test1",
-		Author: "blue",
-	}
 
 	mw1 := ar.ReportMalware{
 		SHA256:    "4490da766c35af92c8d8768136a5e775ed6a0929226ea9ab8995e50d5c516bf9",
@@ -91,32 +87,16 @@ func TestCommentBody(t *testing.T) {
 				Vendor:   "SomeVendor",
 				Name:     "Win32.blood",
 				Positive: true,
-				Source:   "Testing",
+				Source:   "Blue",
 			},
 			ar.ReportMalwareScan{
 				Vendor:   "OtherVendor",
 				Name:     "Win32.cell",
 				Positive: true,
-				Source:   "Testing",
+				Source:   "Blue",
 			},
 		},
 		Relation: "communicated",
-	}
-
-	page1.RemoteHost = []ar.ReportRemoteHost{
-		ar.ReportRemoteHost{
-			IPAddr:         []string{"10.0.0.1"},
-			RelatedMalware: []ar.ReportMalware{mw1},
-		},
-	}
-
-	report.Pages = append(report.Pages, &page1)
-
-	// ----------------------------
-	// Page2
-	page2 := ar.ReportPage{
-		Title:  "test2",
-		Author: "orange",
 	}
 
 	mw2 := ar.ReportMalware{
@@ -127,26 +107,58 @@ func TestCommentBody(t *testing.T) {
 				Vendor:   "T company",
 				Name:     "Win32.blood",
 				Positive: true,
-				Source:   "Testing",
+				Source:   "Orange",
 			},
 			ar.ReportMalwareScan{
 				Vendor:   "S compamny",
 				Name:     "Win32.cell",
 				Positive: true,
-				Source:   "Testing",
+				Source:   "Orange",
 			},
 		},
 		Relation: "embeded",
 	}
 
-	page2.RemoteHost = []ar.ReportRemoteHost{
-		ar.ReportRemoteHost{
-			IPAddr:         []string{"10.0.0.1"},
-			RelatedMalware: []ar.ReportMalware{mw2},
-		},
+	domain1 := ar.ReportDomain{
+		Name:      "example.com",
+		Source:    "Pen",
+		Timestamp: time.Now(),
 	}
-	report.Pages = append(report.Pages, &page2)
+
+	report.Content.RemoteHosts["10.0.0.1"] = ar.ReportRemoteHost{
+		IPAddr:         []string{"10.0.0.1", "10.0.0.3"},
+		RelatedMalware: []ar.ReportMalware{mw1, mw2},
+		RelatedDomains: []ar.ReportDomain{domain1},
+	}
+
+	// ----------------------------
+	// Page2
+
+	mw3 := ar.ReportMalware{
+		SHA256:    "2e0390eb024a52963db7b95e84a9c2b12c004054a7bad9a97ec0c7c89d4681d2",
+		Timestamp: time.Now(),
+		Scans: []ar.ReportMalwareScan{
+			ar.ReportMalwareScan{
+				Vendor:   "T company",
+				Name:     "Win32.blood",
+				Positive: true,
+				Source:   "Orange",
+			},
+			ar.ReportMalwareScan{
+				Vendor:   "S compamny",
+				Name:     "Win32.cell",
+				Positive: true,
+				Source:   "Orange",
+			},
+		},
+		Relation: "embeded",
+	}
+
+	report.Content.RemoteHosts["10.0.0.2"] = ar.ReportRemoteHost{
+		IPAddr:         []string{"10.0.0.2"},
+		RelatedMalware: []ar.ReportMalware{mw3},
+	}
 
 	body := main.BuildCommentBody(report)
-	pp.Println(body)
+	log.Println(body)
 }
