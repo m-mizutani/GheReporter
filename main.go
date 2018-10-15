@@ -81,6 +81,11 @@ func EmitReport(report ar.Report, region, secretArn, tableName string) (*Result,
 			return nil, errors.Wrap(err, "Fail to get GHE issue")
 		}
 
+		if report.Status == "new" {
+			body := BuildIssueBody(report)
+			issue.AppendContent(body)
+		}
+
 	default:
 		return nil, errors.Wrap(err, "Fail to get cache DB")
 	}
