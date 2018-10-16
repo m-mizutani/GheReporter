@@ -102,7 +102,7 @@ func EmitReport(report ar.Report, region, secretArn, tableName string) (*Result,
 
 	if report.IsPublished() {
 		body := BuildPublishedReportHeader(report) + BuildCommentBody(report)
-		log.Printf("body = %d\n", len(body))
+		log.WithField("len of body", len(body)).Info("generated body")
 		ar.Dump("comment", body)
 
 		if len(body) > 0 {
