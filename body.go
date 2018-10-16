@@ -218,3 +218,14 @@ func BuildCommentBody(report ar.Report) string {
 
 	return strings.Join(body, "\n")
 }
+
+func BuildPublishedReportHeader(report ar.Report) string {
+	body := []string{
+		fmt.Sprintf("# Report: %s", report.Alert.Title()),
+		"",
+		fmt.Sprintf("**Severity: %s**", report.Result.Severity),
+		"",
+	}
+
+	return strings.Join(body, "\n")
+}

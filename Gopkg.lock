@@ -109,6 +109,14 @@
   version = "v2.3.0"
 
 [[projects]]
+  digest = "1:0a69a1c0db3591fcefb47f115b224592c8dfa4368b7ba9fae509d5e16cdc95c8"
+  name = "github.com/konsorten/go-windows-terminal-sequences"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "5c8c8bd35d3832f5d134ae1e1e375b69a4d25242"
+  version = "v1.0.1"
+
+[[projects]]
   branch = "master"
   digest = "1:699cba56a47a297b72daf2b95da74b0cbb8e6e06d9017910f0926f9cf72b736c"
   name = "github.com/m-mizutani/AlertResponder"
@@ -157,6 +165,14 @@
   version = "v1.2.0"
 
 [[projects]]
+  digest = "1:3f53e9e4dfbb664cd62940c9c4b65a2171c66acd0b7621a1a6b8e78513525a52"
+  name = "github.com/sirupsen/logrus"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "ad15b42461921f1fb3529b058c6786c6a45d5162"
+  version = "v1.1.1"
+
+[[projects]]
   digest = "1:c40d65817cdd41fac9aa7af8bed56927bb2d6d47e4fea566a74880f5c2b1c41e"
   name = "github.com/stretchr/testify"
   packages = [
@@ -169,6 +185,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:3f3a05ae0b95893d90b9b3b5afdb79a9b3d96e4e36e099d841ae602e4aca0da8"
+  name = "golang.org/x/crypto"
+  packages = ["ssh/terminal"]
+  pruneopts = "UT"
+  revision = "0c41d7ab0a0ee717d4590a44bcb987dfd9e183eb"
+
+[[projects]]
+  branch = "master"
   digest = "1:76ee51c3f468493aff39dbacc401e8831fbb765104cbf613b89bef01cf4bad70"
   name = "golang.org/x/net"
   packages = ["context"]
@@ -177,9 +201,12 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:746ccf620ef9726c42453032e8e039860851ab5914278d24202f343a479a3073"
+  digest = "1:8375ca24f586acd7b9a0ec8c6f24a6706a3ffa3dd7a80fd0e6e51caba139408f"
   name = "golang.org/x/sys"
-  packages = ["unix"]
+  packages = [
+    "unix",
+    "windows",
+  ]
   pruneopts = "UT"
   revision = "af653ce8b74f808d092db8ca9741fbb63d2a469d"
 
@@ -195,6 +222,7 @@
     "github.com/m-mizutani/AlertResponder/lib",
     "github.com/pkg/errors",
     "github.com/satori/go.uuid",
+    "github.com/sirupsen/logrus",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/require",
   ]

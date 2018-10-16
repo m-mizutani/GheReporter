@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"log"
+	"fmt"
 	"os"
 
 	"github.com/guregu/dynamo"
@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
+	log "github.com/sirupsen/logrus"
 )
 
 type secretValues struct {
@@ -60,9 +61,12 @@ func EmitReport(report ar.Report, region, secretArn, tableName string) (*Result,
 
 	switch err {
 	case dynamo.ErrNotFound:
+		log.Println("The issue is not found")
 		// If not existing issue, create a new one.
 		body := BuildIssueBody(report)
 		title := report.Alert.Title()
+		body = fmt.Sprintf("ReportID: %s\n\n", report.ID) + body
+
 		issue, err = ghe.NewIssue(title, body)
 		if err != nil {
 			return nil, errors.Wrap(err, "Fail to create GHE issue")
@@ -74,8 +78,11 @@ func EmitReport(report ar.Report, region, secretArn, tableName string) (*Result,
 		if err := table.Put(cache).Run(); err != nil {
 			return nil, errors.Wrap(err, "Fail to set cache to DynamoDB")
 		}
+		ar.Dump("New issue", cache)
 
 	case nil:
+		log.Println("The issue exists")
+		ar.Dump("Existing issue", cache)
 		issue, err = ghe.GetIssue(cache.IssueURL)
 		if err != nil {
 			return nil, errors.Wrap(err, "Fail to get GHE issue")
@@ -93,22 +100,31 @@ func EmitReport(report ar.Report, region, secretArn, tableName string) (*Result,
 	result.ApiURL = issue.ApiURL
 	result.HtmlURL = issue.HtmlURL
 
-	body := BuildCommentBody(report)
-	if len(body) > 0 {
-		comment, err := issue.AddComment(body)
-		if err != nil {
-			return nil, errors.Wrap(err, "Fail to add a comment to GHE issue")
-		}
+	if report.IsPublished() {
+		body := BuildPublishedReportHeader(report) + BuildCommentBody(report)
+		log.Printf("body = %d\n", len(body))
+		ar.Dump("comment", body)
 
-		result.CommentApiURL = comment.ApiURL
-		result.CommentHtmlURL = comment.HtmlURL
+		if len(body) > 0 {
+			comment, err := issue.AddComment(body)
+			if err != nil {
+				return nil, errors.Wrap(err, "Fail to add a comment to GHE issue")
+			}
+
+			result.CommentApiURL = comment.ApiURL
+			result.CommentHtmlURL = comment.HtmlURL
+		}
 	}
+
+	ar.Dump("Result", result)
 
 	return &result, nil
 }
 
 func main() {
 	lambda.Start(func(ctx context.Context, event events.SNSEvent) (string, error) {
+		ar.Dump("SNSevent", event)
+
 		// Get region
 		region := os.Getenv("AWS_REGION")
 		if region == "" {
@@ -122,6 +138,7 @@ func main() {
 				log.Fatal("Fail to parse json into Report: ", record.SNS.Message)
 			}
 
+			ar.Dump("report", report)
 			EmitReport(report, region, os.Getenv("SECRET_ARN"), os.Getenv("TABLE_NAME"))
 		}
 		return "ok", nil
