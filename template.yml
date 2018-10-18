@@ -49,6 +49,7 @@ Resources:
       CodeUri: build
       Timeout: 300
       MemorySize: 128
+      ReservedConcurrentExecutions: 1
       Role:
         Fn::If: [ LambdaRoleRequired, {"Fn::GetAtt": LambdaRole.Arn}, {Ref: LambdaRoleArn} ]
       Environment:
