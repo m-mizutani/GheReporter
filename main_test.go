@@ -118,6 +118,7 @@ func TestAlertPost(t *testing.T) {
 
 	report := genDummyReport()
 	resp, err := main.EmitReport(report, params.Region, params.SecretArn, params.TableName)
+	report.Status = ar.StatusPublished
 
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
@@ -139,4 +140,17 @@ func TestAlertPost(t *testing.T) {
 	assert.NotEqual(t, resp.ApiURL, respNewID.ApiURL)
 	assert.Contains(t, respNewID.ApiURL, "https://")
 	assert.NotContains(t, respNewID.CommentApiURL, "https://")
+}
+
+func TestPagerDuty(t *testing.T) {
+	var params testParams
+	loadTestConfig(&params)
+
+	report := genDummyReport()
+	report.Status = ar.StatusPublished
+	report.Result.Severity = ar.SevHigh
+	resp, err := main.EmitReport(report, params.Region, params.SecretArn, params.TableName)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
 }

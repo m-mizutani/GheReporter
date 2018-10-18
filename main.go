@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 
 	"github.com/guregu/dynamo"
@@ -21,6 +23,7 @@ type secretValues struct {
 	GithubEndpoint   string `json:"github_endpoint"`
 	GithubRepository string `json:"github_repo"`
 	GithubToken      string `json:"github_token"`
+	PagerDutyToken   string `json:"pagerduty_token"`
 }
 
 type Result struct {
@@ -34,6 +37,67 @@ type reportCache struct {
 	ReportID ar.ReportID `dynamo:"report_id"`
 	IssueURL string      `dynamo:"issue_url"`
 	HtmlURL  string      `dynamo:"html_url"`
+}
+
+func CreatePagerDutyIncident(token, title, url string) error {
+	type incidentContext struct {
+		Type string `json:"type"`
+		Href string `json:"href"`
+		Text string `json:"text"`
+	}
+	type incidentBody struct {
+		ServiceKey  string            `json:"service_key"`
+		EventType   string            `json:"event_type"`
+		Description string            `json:"description"`
+		Detail      string            `json:"detail"`
+		Client      string            `json:"client"`
+		ClientURL   string            `json:"client_url"`
+		Contexts    []incidentContext `json:"contexts"`
+	}
+
+	const pdURL = "https://events.pagerduty.com/generic/2010-04-15/create_event.json"
+
+	body := incidentBody{
+		ServiceKey:  token,
+		EventType:   "trigger",
+		Description: fmt.Sprintf("%s %s", title, url),
+		Client:      "issue",
+		ClientURL:   url,
+		Contexts: []incidentContext{
+			{
+				Type: "link",
+				Href: url,
+			},
+		},
+	}
+
+	log.WithField("body", body)
+
+	data, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", pdURL, bytes.NewBuffer(data))
+	if err != nil {
+		return err
+	}
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	log.WithField("resp", resp).Info("sent a PD request")
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	var respData []byte
+	_, err = resp.Body.Read(respData)
+	if err != nil {
+		return err
+	}
+	log.Printf("response: %s", string(respData))
+
+	return nil
 }
 
 func EmitReport(report ar.Report, region, secretArn, tableName string) (*Result, error) {
@@ -100,30 +164,40 @@ func EmitReport(report ar.Report, region, secretArn, tableName string) (*Result,
 	result.ApiURL = issue.ApiURL
 	result.HtmlURL = issue.HtmlURL
 
-	if report.IsPublished() {
-		body := BuildPublishedReportHeader(report) + BuildCommentBody(report)
-		log.WithField("len of body", len(body)).Info("generated body")
-		ar.Dump("comment", body)
+	commentHdr := BuildPublishedReportHeader(report)
+	commentBody := BuildCommentBody(report)
+	log.Println("Comment: ", commentBody)
 
-		if len(body) > 0 {
-			comment, err := issue.AddComment(body)
+	if len(commentBody) > 0 {
+		body := commentHdr + commentBody
+		comment, err := issue.AddComment(body)
+		if err != nil {
+			return nil, errors.Wrap(err, "Fail to add a comment to GHE issue")
+		}
+
+		result.CommentApiURL = comment.ApiURL
+		result.CommentHtmlURL = comment.HtmlURL
+
+		if report.IsPublished() && report.Result.Severity != ar.SevLow {
+			err := CreatePagerDutyIncident(secrets.PagerDutyToken, report.Alert.Title(), result.CommentHtmlURL)
+
 			if err != nil {
-				return nil, errors.Wrap(err, "Fail to add a comment to GHE issue")
+				return nil, err
 			}
-
-			result.CommentApiURL = comment.ApiURL
-			result.CommentHtmlURL = comment.HtmlURL
 		}
 	}
 
-	ar.Dump("Result", result)
+	log.WithField("result", result).Info("")
 
 	return &result, nil
 }
 
 func main() {
+	log.SetFormatter(&log.JSONFormatter{})
+	log.SetLevel(log.InfoLevel)
+
 	lambda.Start(func(ctx context.Context, event events.SNSEvent) (string, error) {
-		ar.Dump("SNSevent", event)
+		log.WithField("SNSevent", event).Info("Start")
 
 		// Get region
 		region := os.Getenv("AWS_REGION")
@@ -138,7 +212,7 @@ func main() {
 				log.Fatal("Fail to parse json into Report: ", record.SNS.Message)
 			}
 
-			ar.Dump("report", report)
+			log.WithField("report", report).Info("Extrated report")
 			EmitReport(report, region, os.Getenv("SECRET_ARN"), os.Getenv("TABLE_NAME"))
 		}
 		return "ok", nil
