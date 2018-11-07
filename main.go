@@ -60,7 +60,7 @@ func CreatePagerDutyIncident(token, title, url string) error {
 	body := incidentBody{
 		ServiceKey:  token,
 		EventType:   "trigger",
-		Description: fmt.Sprintf("%s %s", title, url),
+		Description: fmt.Sprintf("%s %s", url, title),
 		Client:      "issue",
 		ClientURL:   url,
 		Contexts: []incidentContext{
