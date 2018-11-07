@@ -125,7 +125,7 @@ func EmitReport(report ar.Report, region, secretArn, tableName string) (*Result,
 
 	switch err {
 	case dynamo.ErrNotFound:
-		log.Println("The issue is not found")
+		log.WithField("report", report).Info("The issue is not found")
 		// If not existing issue, create a new one.
 		body := BuildIssueBody(report)
 		title := report.Alert.Title()
@@ -145,14 +145,14 @@ func EmitReport(report ar.Report, region, secretArn, tableName string) (*Result,
 		ar.Dump("New issue", cache)
 
 	case nil:
-		log.Println("The issue exists")
+		log.WithField("issue", cache).Info("The issue exists")
 		ar.Dump("Existing issue", cache)
 		issue, err = ghe.GetIssue(cache.IssueURL)
 		if err != nil {
 			return nil, errors.Wrap(err, "Fail to get GHE issue")
 		}
 
-		if report.Status == "new" {
+		if report.IsNew() {
 			body := BuildIssueBody(report)
 			issue.AppendContent(body)
 		}
@@ -168,7 +168,7 @@ func EmitReport(report ar.Report, region, secretArn, tableName string) (*Result,
 	commentBody := BuildCommentBody(report)
 	log.Println("Comment: ", commentBody)
 
-	if len(commentBody) > 0 {
+	if report.IsPublished() {
 		body := commentHdr + commentBody
 		comment, err := issue.AddComment(body)
 		if err != nil {
@@ -178,7 +178,7 @@ func EmitReport(report ar.Report, region, secretArn, tableName string) (*Result,
 		result.CommentApiURL = comment.ApiURL
 		result.CommentHtmlURL = comment.HtmlURL
 
-		if report.IsPublished() && report.Result.Severity != ar.SevLow {
+		if report.Result.Severity != ar.SevLow {
 			err := CreatePagerDutyIncident(secrets.PagerDutyToken, report.Alert.Title(), result.CommentHtmlURL)
 
 			if err != nil {
