@@ -57,6 +57,10 @@ func CreatePagerDutyIncident(token, title, url string) error {
 
 	const pdURL = "https://events.pagerduty.com/generic/2010-04-15/create_event.json"
 
+	if token == "" {
+		return nil
+	}
+
 	body := incidentBody{
 		ServiceKey:  token,
 		EventType:   "trigger",
