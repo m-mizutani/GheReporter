@@ -217,8 +217,15 @@ func main() {
 			}
 
 			log.WithField("report", report).Info("Extrated report")
-			EmitReport(report, region, os.Getenv("SECRET_ARN"), os.Getenv("TABLE_NAME"))
+			result, err := EmitReport(report, region, os.Getenv("SECRET_ARN"), os.Getenv("TABLE_NAME"))
+			if err != nil {
+				log.WithError(err).Error("Fail to emit report")
+				return "ng", err
+			} else {
+				log.WithField("result", result).Info("Emitted")
+			}
 		}
+
 		return "ok", nil
 	})
 }
