@@ -104,7 +104,7 @@ func genDummyReport() ar.Report {
 		Relation: "embeded",
 	}
 
-	report.Content.RemoteHosts["10.0.0.1"] = ar.ReportRemoteHost{
+	report.Content.OpponentHosts["10.0.0.1"] = ar.ReportOpponentHost{
 		IPAddr:         []string{"10.0.0.1"},
 		RelatedMalware: []ar.ReportMalware{mw1, mw2},
 	}
@@ -126,7 +126,7 @@ func TestAlertPost(t *testing.T) {
 	assert.Contains(t, resp.CommentApiURL, "https://")
 
 	// Overwrite
-	report.Content.RemoteHosts = map[string]ar.ReportRemoteHost{}
+	report.Content.OpponentHosts = map[string]ar.ReportOpponentHost{}
 	respNoPage, err := main.EmitReport(report, params.Region, params.SecretArn, params.TableName)
 	assert.NoError(t, err)
 	assert.Equal(t, resp.ApiURL, respNoPage.ApiURL)
@@ -148,7 +148,7 @@ func TestPagerDuty(t *testing.T) {
 
 	report := genDummyReport()
 	report.Status = ar.StatusPublished
-	report.Result.Severity = ar.SevHigh
+	report.Result.Severity = ar.SevUrgent
 	resp, err := main.EmitReport(report, params.Region, params.SecretArn, params.TableName)
 
 	assert.NoError(t, err)

@@ -50,34 +50,6 @@ func sliceIndex(strArray []string, word string) int {
 	return -1
 }
 
-type aggrValue struct {
-	valueMap map[string]struct{}
-}
-
-func newAggrMap() aggrValue {
-	av := aggrValue{
-		valueMap: map[string]struct{}{},
-	}
-	return av
-}
-
-func (x *aggrValue) add(value string) {
-	x.valueMap[value] = struct{}{}
-}
-
-func (x *aggrValue) aggr() string {
-	valueList := []string{}
-	for k := range x.valueMap {
-		valueList = append(valueList, k)
-	}
-
-	if len(valueList) > 0 {
-		return strings.Join(valueList, ", ")
-	} else {
-		return "N/A"
-	}
-}
-
 func buildMalwareSection(pages []ar.ReportMalware) []string {
 	if len(pages) == 0 {
 		return []string{}
@@ -177,27 +149,34 @@ func buildURLSection(pages []ar.ReportURL) []string {
 	return append(body, "")
 }
 
-func buildRemoteHostSection(pages map[string]ar.ReportRemoteHost) []string {
+func aggrStrings(values []string) string {
+	vmap := map[string]struct{}{}
+	for _, v := range values {
+		vmap[v] = struct{}{}
+	}
+
+	vlist := []string{}
+	for k := range vmap {
+		vlist = append(vlist, fmt.Sprintf("`%s`", k))
+	}
+
+	if len(vlist) == 0 {
+		return "N/A"
+	}
+
+	return strings.Join(vlist, ", ")
+}
+
+func buildOpponentHostSection(pages map[string]ar.ReportOpponentHost) []string {
 	body := []string{}
 
 	for k, page := range pages {
-		ipaddr, country, asOwner := newAggrMap(), newAggrMap(), newAggrMap()
-		for _, v := range page.IPAddr {
-			ipaddr.add(v)
-		}
-		for _, v := range page.Country {
-			country.add(v)
-		}
-		for _, v := range page.ASOwner {
-			asOwner.add(v)
-		}
-
 		lines := []string{
-			fmt.Sprintf("## Remote Host: %s", k),
+			fmt.Sprintf("## Opponent Host: %s", k),
 			"",
-			fmt.Sprintf("- IP address: %s", ipaddr.aggr()),
-			fmt.Sprintf("- Country: %s", country.aggr()),
-			fmt.Sprintf("- AS Owner: %s", asOwner.aggr()),
+			fmt.Sprintf("- IP address: %s", aggrStrings(page.IPAddr)),
+			fmt.Sprintf("- Country: %s", aggrStrings(page.Country)),
+			fmt.Sprintf("- AS Owner: %s", aggrStrings(page.ASOwner)),
 			"",
 		}
 
@@ -210,20 +189,76 @@ func buildRemoteHostSection(pages map[string]ar.ReportRemoteHost) []string {
 	return body
 }
 
+func buildServiceUsageSection(usages []ar.ReportServiceUsage) []string {
+	if len(usages) == 0 {
+		return []string{}
+	}
+
+	body := []string{
+		"",
+		"### Service Usage History",
+		"",
+		"Time | Service | Principal | Action ",
+		":---:|:--------|:----------|:-------",
+	}
+
+	for _, usage := range usages {
+		line := fmt.Sprintf(" %s | %s | %s | %s",
+			usage.LastSeen.Format("2006-01-02 15:04:05"),
+			usage.ServiceName, usage.Principal, usage.Action)
+		body = append(body, line)
+	}
+
+	body = append(body, "")
+	return body
+}
+
+func buildAlliedHostSection(pages map[string]ar.ReportAlliedHost) []string {
+	body := []string{}
+
+	for k, page := range pages {
+		lines := []string{
+			fmt.Sprintf("## Allied Host: %s", k),
+			"",
+			fmt.Sprintf("- UserName: %s", aggrStrings(page.UserName)),
+			fmt.Sprintf("- Owner: %s", aggrStrings(page.Owner)),
+			fmt.Sprintf("- OS: %s", aggrStrings(page.OS)),
+			fmt.Sprintf("- IPAddr: %s", aggrStrings(page.IPAddr)),
+			fmt.Sprintf("- MACAddr: %s", aggrStrings(page.MACAddr)),
+			fmt.Sprintf("- HostName: %s", aggrStrings(page.HostName)),
+			fmt.Sprintf("- Country: %s", aggrStrings(page.Country)),
+			fmt.Sprintf("- Software: %s", aggrStrings(page.Software)),
+			"",
+		}
+
+		body = append(body, lines...)
+		body = append(body, buildServiceUsageSection(page.ServiceUsage)...)
+	}
+
+	return body
+}
+
 func BuildCommentBody(report ar.Report) string {
 	// lines := []string{"# Inspection report"}
 	body := []string{}
 
-	body = append(body, buildRemoteHostSection(report.Content.RemoteHosts)...)
+	body = append(body, buildAlliedHostSection(report.Content.AlliedHosts)...)
+	body = append(body, buildOpponentHostSection(report.Content.OpponentHosts)...)
 
 	return strings.Join(body, "\n")
 }
 
 func BuildPublishedReportHeader(report ar.Report) string {
+	reason := report.Result.Reason
+	if reason == "" {
+		reason = "N/A"
+	}
+
 	body := []string{
 		fmt.Sprintf("# Report: %s", report.Alert.Title()),
 		"",
-		fmt.Sprintf("**Severity: %s**", report.Result.Severity),
+		fmt.Sprintf("- **Severity: %s**", report.Result.Severity),
+		fmt.Sprintf("- Reason: %s", reason),
 		"",
 	}
 

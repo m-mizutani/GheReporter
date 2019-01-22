@@ -1,7 +1,7 @@
 package main_test
 
 import (
-	"log"
+	"fmt"
 	"testing"
 	"time"
 
@@ -125,7 +125,7 @@ func TestCommentBody(t *testing.T) {
 		Timestamp: time.Now(),
 	}
 
-	report.Content.RemoteHosts["10.0.0.1"] = ar.ReportRemoteHost{
+	report.Content.OpponentHosts["10.0.0.1"] = ar.ReportOpponentHost{
 		IPAddr:         []string{"10.0.0.1", "10.0.0.3"},
 		RelatedMalware: []ar.ReportMalware{mw1, mw2},
 		RelatedDomains: []ar.ReportDomain{domain1},
@@ -154,11 +154,25 @@ func TestCommentBody(t *testing.T) {
 		Relation: "embeded",
 	}
 
-	report.Content.RemoteHosts["10.0.0.2"] = ar.ReportRemoteHost{
+	report.Content.OpponentHosts["10.0.0.2"] = ar.ReportOpponentHost{
 		IPAddr:         []string{"10.0.0.2"},
 		RelatedMalware: []ar.ReportMalware{mw3},
 	}
 
+	report.Content.AlliedHosts["192.168.1.1"] = ar.ReportAlliedHost{
+		IPAddr: []string{"192.168.1.1", "2.3.4.5"},
+		Owner:  []string{"Some company"},
+		ServiceUsage: []ar.ReportServiceUsage{
+			{
+				LastSeen:    time.Now(),
+				ServiceName: "Some Service",
+				Principal:   "you@example.com",
+				Action:      "Login failure",
+			},
+		},
+	}
+
 	body := main.BuildCommentBody(report)
-	log.Println(body)
+
+	fmt.Println(body)
 }
