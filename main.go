@@ -173,6 +173,13 @@ func EmitReport(report ar.Report, region, secretArn, tableName string) (*Result,
 	log.Println("Comment: ", commentBody)
 
 	if report.IsPublished() {
+		if report.Result.Severity == ar.SevSafe {
+			err := issue.Close()
+			if err != nil {
+				return nil, err
+			}
+		}
+
 		body := commentHdr + commentBody
 		comment, err := issue.AddComment(body)
 		if err != nil {
@@ -182,12 +189,7 @@ func EmitReport(report ar.Report, region, secretArn, tableName string) (*Result,
 		result.CommentApiURL = comment.ApiURL
 		result.CommentHtmlURL = comment.HtmlURL
 
-		if report.Result.Severity == ar.SevSafe {
-			err := issue.Close()
-			if err != nil {
-				return nil, err
-			}
-		} else {
+		if report.Result.Severity != ar.SevSafe {
 			err := CreatePagerDutyIncident(secrets.PagerDutyToken, report.Alert.Title(), result.CommentHtmlURL)
 
 			if err != nil {
