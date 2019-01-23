@@ -240,3 +240,30 @@ func (x *GitHubIssue) FetchComments() ([]string, error) {
 	}
 	return results, nil
 }
+
+func (x *GitHubIssue) Close() error {
+	type issuePatch struct {
+		State string `json:"state"`
+	}
+
+	patch := issuePatch{"closed"}
+	body, err := json.Marshal(patch)
+
+	client := &http.Client{}
+	req, err := http.NewRequest("PATCH", x.ApiURL, bytes.NewReader(body))
+
+	if err != nil {
+		return errors.Wrap(err, "Fail to build patch request of issue")
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("token %s", x.github.token))
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return errors.Wrap(err, "Fail to close the issues")
+	} else if resp.StatusCode != 200 {
+		return errors.New(fmt.Sprintf("Fail to patch the issue, code: %d",
+			resp.StatusCode))
+	}
+
+	return nil
+}

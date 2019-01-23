@@ -182,7 +182,12 @@ func EmitReport(report ar.Report, region, secretArn, tableName string) (*Result,
 		result.CommentApiURL = comment.ApiURL
 		result.CommentHtmlURL = comment.HtmlURL
 
-		if report.Result.Severity != ar.SevSafe {
+		if report.Result.Severity == ar.SevSafe {
+			err := issue.Close()
+			if err != nil {
+				return nil, err
+			}
+		} else {
 			err := CreatePagerDutyIncident(secrets.PagerDutyToken, report.Alert.Title(), result.CommentHtmlURL)
 
 			if err != nil {
