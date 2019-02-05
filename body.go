@@ -1,12 +1,28 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
 	ar "github.com/m-mizutani/AlertResponder/lib"
 )
+
+func jsonPP(value string) ([]string, error) {
+	var v interface{}
+	err := json.Unmarshal([]byte(value), &v)
+	if err != nil {
+		return nil, err
+	}
+	raw, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		return nil, err
+	}
+
+	lines := strings.Split(string(raw), "\n")
+	return lines, nil
+}
 
 // BuildIssueBody creates message body of issue by Alert. It should show
 // only basic information of the alert.
@@ -29,12 +45,40 @@ func BuildIssueBody(report ar.Report) string {
 		"- Attributes:",
 	}
 
+	// attributes section excluding json
 	for _, attr := range report.Alert.Attrs {
+		if attr.Type == "json" {
+			continue
+		}
+
 		base := fmt.Sprintf("  - %s: `%s`", attr.Key, attr.Value)
 		if len(attr.Context) > 0 {
 			base = fmt.Sprintf("%s (%s)", base, strings.Join(attr.Context, ", "))
 		}
 		lines = append(lines, base)
+	}
+
+	// json type section
+	for _, attr := range report.Alert.Attrs {
+		if attr.Type != "json" {
+			continue
+		}
+
+		lines = append(lines, []string{
+			"",
+			fmt.Sprintf("### %s", attr.Key),
+			"",
+			"```",
+		}...)
+
+		jsonLines, err := jsonPP(attr.Value)
+		if err != nil {
+			lines = append(lines, attr.Value)
+		} else {
+			lines = append(lines, jsonLines...)
+		}
+
+		lines = append(lines, []string{"```", ""}...)
 	}
 
 	return strings.Join(lines, "\n")
