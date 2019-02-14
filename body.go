@@ -187,7 +187,11 @@ func buildURLSection(pages []ar.ReportURL) []string {
 
 	for _, page := range pages {
 		datetime := page.Timestamp.Format("2006-01-02 15:04:05")
-		body = append(body, fmt.Sprintf("- %s `%s` (%s)", datetime, page.URL, page.Source))
+		line := fmt.Sprintf("- %s `%s` (%s)", datetime, page.URL, page.Source)
+		if page.Reference != "" {
+			line += fmt.Sprintf(" ([Ref](%s))", page.Reference)
+		}
+		body = append(body, line)
 	}
 
 	return append(body, "")

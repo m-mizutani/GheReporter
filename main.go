@@ -146,11 +146,11 @@ func EmitReport(report ar.Report, region, secretArn, tableName string) (*Result,
 		if err := table.Put(cache).Run(); err != nil {
 			return nil, errors.Wrap(err, "Fail to set cache to DynamoDB")
 		}
-		ar.Dump("New issue", cache)
+		log.WithField("issue", cache).Info("new issue")
 
 	case nil:
 		log.WithField("issue", cache).Info("The issue exists")
-		ar.Dump("Existing issue", cache)
+
 		issue, err = ghe.GetIssue(cache.IssueURL)
 		if err != nil {
 			return nil, errors.Wrap(err, "Fail to get GHE issue")
