@@ -162,7 +162,7 @@ func TestCommentBody(t *testing.T) {
 	report.Content.AlliedHosts["192.168.1.1"] = ar.ReportAlliedHost{
 		IPAddr: []string{"192.168.1.1", "2.3.4.5"},
 		Owner:  []string{"Some company"},
-		ServiceUsage: []ar.ReportServiceUsage{
+		Activities: []ar.ReportActivity{
 			{
 				LastSeen:    time.Now(),
 				ServiceName: "Some Service",

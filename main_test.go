@@ -117,29 +117,32 @@ func TestAlertPost(t *testing.T) {
 	loadTestConfig(&params)
 
 	report := genDummyReport()
+
 	resp, err := main.EmitReport(report, params.Region, params.SecretArn, params.TableName)
 	report.Status = ar.StatusPublished
 
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
 	assert.Contains(t, resp.ApiURL, "https://")
-	assert.Contains(t, resp.CommentApiURL, "https://")
 
-	// Overwrite
-	report.Content.OpponentHosts = map[string]ar.ReportOpponentHost{}
-	respNoPage, err := main.EmitReport(report, params.Region, params.SecretArn, params.TableName)
-	assert.NoError(t, err)
-	assert.Equal(t, resp.ApiURL, respNoPage.ApiURL)
-	assert.Contains(t, respNoPage.ApiURL, "https://")
-	assert.NotContains(t, respNoPage.CommentApiURL, "https://")
+	/*
+		assert.Contains(t, resp.CommentApiURL, "https://")
 
-	report.ID = ar.NewReportID()
-	respNewID, err := main.EmitReport(report, params.Region, params.SecretArn, params.TableName)
+		// Overwrite
+		report.Content.OpponentHosts = map[string]ar.ReportOpponentHost{}
+		respNoPage, err := main.EmitReport(report, params.Region, params.SecretArn, params.TableName)
+		assert.NoError(t, err)
+		assert.Equal(t, resp.ApiURL, respNoPage.ApiURL)
+		assert.Contains(t, respNoPage.ApiURL, "https://")
 
-	assert.NoError(t, err)
-	assert.NotEqual(t, resp.ApiURL, respNewID.ApiURL)
-	assert.Contains(t, respNewID.ApiURL, "https://")
-	assert.NotContains(t, respNewID.CommentApiURL, "https://")
+		report.ID = ar.NewReportID()
+		respNewID, err := main.EmitReport(report, params.Region, params.SecretArn, params.TableName)
+
+		assert.NoError(t, err)
+		assert.NotEqual(t, resp.ApiURL, respNewID.ApiURL)
+		assert.Contains(t, respNewID.ApiURL, "https://")
+		assert.NotContains(t, respNewID.CommentApiURL, "https://")
+	*/
 }
 
 func TestPagerDuty(t *testing.T) {

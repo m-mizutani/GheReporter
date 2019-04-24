@@ -237,23 +237,24 @@ func buildOpponentHostSection(pages map[string]ar.ReportOpponentHost) []string {
 	return body
 }
 
-func buildServiceUsageSection(usages []ar.ReportServiceUsage) []string {
+func buildActivitySection(usages []ar.ReportActivity) []string {
 	if len(usages) == 0 {
 		return []string{}
 	}
 
 	body := []string{
 		"",
-		"### Service Usage History",
+		"### Service Activities",
 		"",
-		"Time | Service | Principal | Action ",
-		":---:|:--------|:----------|:-------",
+		"Time | IP addr | Service | Principal | Action | Target",
+		":---:|:--------|:----------|:-------|:-------|:--------",
 	}
 
 	for _, usage := range usages {
-		line := fmt.Sprintf(" %s | %s | %s | %s",
-			usage.LastSeen.Format("2006-01-02 15:04:05"),
-			usage.ServiceName, usage.Principal, usage.Action)
+		line := strings.Join([]string{
+			usage.LastSeen.Format("2006-01-02 15:04:05"), usage.RemoteAddr,
+			usage.ServiceName, usage.Principal, usage.Action, usage.Target,
+		}, " | ")
 		body = append(body, line)
 	}
 
@@ -280,7 +281,23 @@ func buildAlliedHostSection(pages map[string]ar.ReportAlliedHost) []string {
 		}
 
 		body = append(body, lines...)
-		body = append(body, buildServiceUsageSection(page.ServiceUsage)...)
+		body = append(body, buildActivitySection(page.Activities)...)
+	}
+
+	return body
+}
+
+func buildSubjectUserSection(pages map[string]ar.ReportUser) []string {
+	body := []string{}
+
+	for k, page := range pages {
+		lines := []string{
+			fmt.Sprintf("## Subject User: %s", k),
+			"",
+		}
+
+		body = append(body, lines...)
+		body = append(body, buildActivitySection(page.Activities)...)
 	}
 
 	return body
@@ -292,6 +309,7 @@ func BuildCommentBody(report ar.Report) string {
 
 	body = append(body, buildAlliedHostSection(report.Content.AlliedHosts)...)
 	body = append(body, buildOpponentHostSection(report.Content.OpponentHosts)...)
+	body = append(body, buildSubjectUserSection(report.Content.SubjectUsers)...)
 
 	return strings.Join(body, "\n")
 }
